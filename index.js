@@ -19,7 +19,10 @@ app.post('/upload', upload.single('csvFile'), async (req, res) => {
   }
 
   const list = JSON.parse(fs.readFileSync('list.json'));
-  list.push(req.file.path);
+  list.push({
+    email: req.body.email,
+    path: req.file.path,
+  });
 
   fs.writeFileSync('list.json', JSON.stringify(list));
 

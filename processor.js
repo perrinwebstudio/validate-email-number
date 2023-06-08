@@ -2,6 +2,10 @@ const axios = require('axios');
 const csv = require('csvtojson');
 const fs = require('fs');
 const jsonToCSV = require('json-to-csv');
+const sgMail = require('@sendgrid/mail')
+
+sgMail.setApiKey('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');
+const senderEmail = 'Chase.hilton@fusionhcs.com'
 
 const emailKeys = ['Email', 'Email 1', 'Email 2', 'Email 3', 'Email 4', 'Email 5'];
 const phoneKeys = ['Phone 1', 'Phone 2', 'Phone 3', 'Phone 4', 'Phone 5'];
@@ -73,22 +77,56 @@ const process = async (path) => {
 
   const outputPath = `${path}-sanitized.csv`;
   await jsonToCSV(csvData, outputPath);
+
+  return outputPath;
 };
 
 const run = async () => {
-  let list = JSON.parse(fs.readFileSync('list.json'));
-  for (const path of list) {
+  let list = [];
+  try {
+    list = JSON.parse(fs.readFileSync('list.json'));
+  } catch (e) {
+    //
+  }
+  for (const item of list) {
     try {
-      await process(path);
-      fs.unlinkSync(path);
-      list = list.filter(p => p !== path);
+      const outputPath = await process(item.path);
+      fs.unlinkSync(item.path);
+      list = list.filter(p => p.path !== item.path);
       fs.writeFileSync('list.json', JSON.stringify(list));
+      await sendEmailWithAttachment(item.email, outputPath);
     } catch (e) {
-      console.log(path, e.message);
+      console.log(item.path, e.message);
     }
   }
 
-  setTimeout(run, 60 * 1000);
+  setTimeout(run, 10 * 1000);
+};
+
+const sendEmailWithAttachment = async (recipientEmail, csvFilePath) => {
+  const attachment = fs.readFileSync(csvFilePath).toString('base64');
+
+  const msg = {
+    to: recipientEmail,
+    from: senderEmail,
+    subject: 'Updated CSV Result',
+    text: 'Please find the attached CSV file.',
+    attachments: [
+      {
+        content: attachment,
+        filename: 'result.csv',
+        type: 'text/csv',
+        disposition: 'attachment',
+      },
+    ],
+  };
+
+  try {
+    await sgMail.send(msg);
+    console.log('Email sent successfully');
+  } catch (error) {
+    console.error('Error sending email:', error);
+  }
 };
 
 run();
