@@ -97,7 +97,9 @@ const run = async () => {
       fs.writeFileSync('list.json', JSON.stringify(list));
       await sendEmailWithAttachment(item.email, outputPath);
     } catch (e) {
-      console.log(item.path, e.message);
+      list = list.filter(p => p.path !== item.path);
+      fs.writeFileSync('list.json', JSON.stringify(list));
+      console.log('FAILED: ', item.path, e.message);
     }
   }
 
