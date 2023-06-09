@@ -11,6 +11,7 @@ const emailKeys = ['Email', 'Email 1', 'Email 2', 'Email 3', 'Email 4', 'Email 5
 const phoneKeys = ['Phone 1', 'Phone 2', 'Phone 3', 'Phone 4', 'Phone 5'];
 
 const formatPhoneNumber = phone => {
+  if (!phone) return null;
   let sanitized = phone.replace(/\D/g, '');
   if (sanitized.length === 10) {
     sanitized = `1${sanitized}`;
